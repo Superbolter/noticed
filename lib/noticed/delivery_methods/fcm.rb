@@ -15,11 +15,17 @@ module Noticed
         post_request("https://fcm.googleapis.com/v1/projects/#{credentials[:project_id]}/messages:send",
           headers: {authorization: "Bearer #{access_token}"},
           json: format_notification(device_token))
+          
       rescue Noticed::ResponseUnsuccessful => exception
+        if ["404","400"].include?(exception.response.code)
+          NotificationToken.where(token: device_token).delete_all
+        end
+
         if exception.response.code == "404" && config[:invalid_token]
           notification.instance_exec(device_token, &config[:invalid_token])
         else
-          raise
+          # raise 
+          puts "some error"
         end
       end
 
